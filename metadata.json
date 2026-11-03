@@ -1,0 +1,6 @@
+{
+  "name": "Sarajevo Air Quality & Pollution Monitor",
+  "description": "Real-time air pollution and smog tracking across the Sarajevo region, connecting official monitoring stations (FHMZ, US Embassy, Eko Akcija), Copernicus models, and citizen IoT sensors.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
