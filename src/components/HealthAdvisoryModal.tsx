@@ -35,8 +35,8 @@ export const HealthAdvisoryModal: React.FC<HealthAdvisoryModalProps> = ({
               </h3>
               <p className="text-xs text-slate-400">
                 {isBs
-                  ? `Trenutni indeks u Sarajevu: AQI ${currentAQIResult.aqi} (${currentAQIResult.labelBs})`
-                  : `Current Sarajevo Index: AQI ${currentAQIResult.aqi} (${currentAQIResult.labelEn})`}
+                  ? `Prikaz prototipa: AQI ${currentAQIResult.aqi} (${currentAQIResult.labelBs}) — nije službeno mjerenje`
+                  : `Prototype display: AQI ${currentAQIResult.aqi} (${currentAQIResult.labelEn}) — not an official observation`}
               </p>
             </div>
           </div>
@@ -102,6 +102,11 @@ export const HealthAdvisoryModal: React.FC<HealthAdvisoryModalProps> = ({
 
         {/* Content */}
         <div className="p-5 overflow-y-auto space-y-4 text-xs flex-1">
+          <p className="text-slate-300 border border-slate-700 rounded-lg p-3">
+            {isBs ? 'Opće informacije za smanjenje izloženosti. Modelirani i probni podaci ove aplikacije nisu osnova za lične medicinske odluke. Pratite lokalne službene podatke i savjet zdravstvenog stručnjaka.' : 'General exposure information. This app’s modelled and sample data are not a basis for personal medical decisions. Follow local official observations and advice from a health professional.'}
+            {' '}<a className="underline text-sky-300" href="https://www.who.int/news-room/questions-and-answers/item/air-pollution-personal-interventions-and-risk-communication" target="_blank" rel="noreferrer">WHO</a>
+            {' · '}<a className="underline text-sky-300" href="https://www.who.int/europe/publications/m/item/personal-level-actions-to-reduce-air-pollution-exposure" target="_blank" rel="noreferrer">{isBs ? 'WHO vodiči' : 'WHO guidance'}</a>
+          </p>
           {activeTab === 'general' && (
             <div className="space-y-3">
               <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
@@ -114,24 +119,24 @@ export const HealthAdvisoryModal: React.FC<HealthAdvisoryModalProps> = ({
                     <span className="text-emerald-400 font-bold">•</span>
                     <span>
                       {isBs
-                        ? 'Smanjite kretanje na otvorenom u jutarnjim (07:00-10:00) i večernjim satima (18:00-23:00) kada je koncentracija PM2.5 najviša.'
-                        : 'Minimize outdoor presence during morning (07:00-10:00) and evening hours (18:00-23:00) when PM2.5 concentrations peak.'}
+                        ? 'Vrijeme i mjesto aktivnosti prilagodite aktuelnim lokalnim mjerenjima i upozorenjima; periodi povišenog zagađenja nisu isti svakog dana.'
+                        : 'Adjust the timing and location of activities using current local observations and advisories; pollution peaks vary by day.'}
                     </span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-emerald-400 font-bold">•</span>
                     <span>
                       {isBs
-                        ? 'Ako morate boraviti vani, nosite zaštitnu respiratornu masku sa oznakom FFP2 ili N95 (obične hirurške i platnene maske ne zaustavljaju PM2.5).'
-                        : 'If you must go outside, wear an FFP2 or N95 respirator mask (surgical and cloth masks do not filter PM2.5 particulate matter).'}
+                        ? 'Respirator može smanjiti izloženost česticama kada je pravilno odabran i prilagođen licu; nije zaštita od svakog zagađivača.'
+                        : 'A correctly selected and fitted respirator can reduce particle exposure; it does not protect against every pollutant.'}
                     </span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-emerald-400 font-bold">•</span>
                     <span>
                       {isBs
-                        ? 'Izbjegavajte kretanje u neposrednoj blizini glavnih saobraćajnica (Zmaja od Bosne, Bulevar Meše Selimovića) gdje su koncentracije NO2 i čađi ekstremne.'
-                        : 'Avoid walking right alongside major thoroughfares (Zmaja od Bosne, Bulevar Meše Selimovića) where traffic NO2 and black carbon concentrate.'}
+                        ? 'Kada je moguće, birajte putanje udaljenije od gustog saobraćaja i drugih izvora emisija.'
+                        : 'Where practical, choose routes away from heavy traffic and other emission sources.'}
                     </span>
                   </li>
                 </ul>
@@ -142,12 +147,12 @@ export const HealthAdvisoryModal: React.FC<HealthAdvisoryModalProps> = ({
                 <Mountain className="w-6 h-6 text-purple-400 shrink-0 mt-0.5" />
                 <div>
                   <h4 className="font-bold text-purple-200 text-sm">
-                    {isBs ? 'Planinski bijeg (Trebević, Igman, Bjelašnica)' : 'Mountain Refuge (Trebević, Igman, Bjelašnica)'}
+                    {isBs ? 'Provjera uslova prije odlaska' : 'Check conditions before travelling'}
                   </h4>
                   <p className="text-slate-300 mt-1">
                     {isBs
-                      ? 'Zahvaljujući temperaturnoj inverziji, planine iznad 800-1000m imaju čist vazduh i sunčano vrijeme. Sarajevska žičara od Bistrika do Trebevića vozi samo 7 minuta direktno iznad smoga!'
-                      : 'Due to temperature inversion, mountains above 800-1,000m enjoy pure air and sunshine. The Sarajevo Cable Car reaches Trebević in just 7 minutes right above the smog!'}
+                      ? 'Veća nadmorska visina ne garantuje čist zrak. Ovaj prototip ne potvrđuje sigurnost lokacije ili putovanja; provjerite lokalna mjerenja i vrijeme.'
+                      : 'Higher elevation does not guarantee clean air. This prototype does not establish that a location or journey is safe; check local observations and weather.'}
                   </p>
                 </div>
               </div>
@@ -162,13 +167,12 @@ export const HealthAdvisoryModal: React.FC<HealthAdvisoryModalProps> = ({
                 </h4>
                 <p className="text-slate-300">
                   {isBs
-                    ? 'Čestice PM2.5 prodiru direktno u plućne alveole i krvotok, izazivajući upalne reakcije i suženje disajnih puteva.'
-                    : 'PM2.5 particles penetrate deep into alveoli and the bloodstream, triggering inflammation and airway constriction.'}
+                    ? 'Lične mjere zaštite prilagodite svom zdravstvenom stanju uz savjet zdravstvenog stručnjaka.'
+                    : 'Discuss exposure precautions appropriate to your health with a health professional.'}
                 </p>
                 <ul className="space-y-1.5 text-slate-300 pl-2">
-                  <li>• {isBs ? 'Obavezno nosite propisanu inhalacionu terapiju (pumpice) sa sobom.' : 'Keep prescribed bronchodilator inhalers readily accessible at all times.'}</li>
-                  <li>• {isBs ? 'Ne izlazite vani bez FFP2 maske kada je AQI iznad 100.' : 'Do not venture outdoors without an FFP2 mask when AQI exceeds 100.'}</li>
-                  <li>• {isBs ? 'U slučaju otežanog disanja ili stezanja u prsima, odmah kontaktirajte ljekara (Hitna pomoć: 124).' : 'Seek immediate medical assistance if chest tightness or acute dyspnea occurs (Emergency: 124).'}</li>
+                  <li>• {isBs ? 'Slijedite svoj postojeći plan liječenja; aplikacija ga ne mijenja.' : 'Follow your existing care plan; this app does not change it.'}</li>
+                  <li>• {isBs ? 'Za odluke koristite službena upozorenja, ne procijenjeni indeks ovog prototipa.' : 'Use official advisories for decisions, not this prototype’s estimated index.'}</li>
                 </ul>
               </div>
 
@@ -178,8 +182,8 @@ export const HealthAdvisoryModal: React.FC<HealthAdvisoryModalProps> = ({
                 </h4>
                 <p className="text-slate-300">
                   {isBs
-                    ? 'Dječija pluća su u razvoju i udišu više zraka po kilogramu tjelesne mase. Za vrijeme epizoda uzbune preporučuje se boravak u prostorijama sa pročišćivačem zraka ili privremeni boravak na planini.'
-                    : 'Developing lungs breathe significantly more air per kilogram of body weight. During high smog episodes, keep children indoors with air purifiers or visit mountain areas.'}
+                    ? 'Pratite lokalne zdravstvene preporuke za osjetljive grupe i zatražite individualni savjet ako je potreban.'
+                    : 'Follow local health guidance for sensitive groups and seek individual advice when needed.'}
                 </p>
               </div>
             </div>
@@ -194,29 +198,29 @@ export const HealthAdvisoryModal: React.FC<HealthAdvisoryModalProps> = ({
                 </h4>
                 <p className="text-slate-300">
                   {isBs
-                    ? 'Tokom intenzivnog trčanja ili vožnje bicikla disanje prelazi na usta, čime se zaobilaze nosni filteri, a volumen udahnutog zraka se povećava za 500-1000%!'
-                    : 'During vigorous cardiovascular exercise, mouth breathing bypasses nasal filtration, increasing particulate inhalation by up to 10x!'}
+                    ? 'Vrijeme, mjesto i intenzitet fizičke aktivnosti prilagodite stvarnim lokalnim uslovima i vlastitom zdravlju.'
+                    : 'Adjust the timing, location and intensity of exercise to actual local conditions and your health.'}
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mt-2">
                   <div className="p-2.5 rounded-lg bg-rose-950/30 border border-rose-800/40">
                     <span className="font-bold text-rose-300 block mb-1">
-                      {isBs ? '❌ Izbjegavati u gradu (AQI > 100):' : '❌ Avoid in Valley (AQI > 100):'}
+                      {isBs ? 'Provjerite prije aktivnosti:' : 'Check before activity:'}
                     </span>
                     <span className="text-slate-300 text-[11px]">
                       {isBs
-                        ? 'Trčanje na Vilsonovom šetalištu, Bentbaši, Darivi ili Alipašinom polju rano ujutro ili navečer.'
-                        : 'Running along Vilsonovo promenade, Bentbasa, Dariva, or city parks during morning/evening smog.'}
+                        ? 'Službena mjerenja, upozorenja i uslove na planiranoj ruti.'
+                        : 'Official observations, advisories and conditions along your planned route.'}
                     </span>
                   </div>
 
                   <div className="p-2.5 rounded-lg bg-emerald-950/30 border border-emerald-800/40">
                     <span className="font-bold text-emerald-300 block mb-1">
-                      {isBs ? '✅ Preporučene alternative:' : '✅ Recommended Alternatives:'}
+                      {isBs ? 'Razmotrite alternative:' : 'Consider alternatives:'}
                     </span>
                     <span className="text-slate-300 text-[11px]">
                       {isBs
-                        ? 'Trčanje na Trebeviću (staza Bob staza, Brus), Igmanu (Veliko polje) ili indoor treninzi sa HEPA filterom.'
-                        : 'Running trails on Trebević (Brus, Bobsleigh track), Igman, or indoor treadmill with HEPA air filtration.'}
+                        ? 'Drugu lokaciju, termin ili intenzitet u skladu sa provjerenim uslovima.'
+                        : 'A different location, time or intensity based on verified conditions.'}
                     </span>
                   </div>
                 </div>
@@ -228,18 +232,18 @@ export const HealthAdvisoryModal: React.FC<HealthAdvisoryModalProps> = ({
             <div className="space-y-3">
               <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2">
                 <h4 className="font-bold text-white text-sm">
-                  {isBs ? 'Pravilo provjetravanja u Sarajevskoj kotlini:' : 'Valley Airing Window Rules:'}
+                  {isBs ? 'Unutrašnji i vanjski zrak:' : 'Indoor and outdoor air:'}
                 </h4>
                 <p className="text-slate-300">
                   {isBs
-                    ? 'Tokom zimskih inverzija, NIKADA ne otvarajte prozore na kipu duže vrijeme, a posebno ne rano ujutro (06:00-09:00) niti navečer (18:00-22:00) kada komšijska ložišta najjače dime.'
-                    : 'During winter inversions, NEVER leave windows tilted for hours. Avoid opening windows between 06:00-09:00 and 18:00-22:00 when home stoves emit maximum smoke.'}
+                    ? 'Uslovi unutra i vani se razlikuju. Ova aplikacija ne mjeri kvalitet zraka u vašem domu i ne određuje siguran termin provjetravanja.'
+                    : 'Indoor and outdoor conditions differ. This app does not measure your home’s air quality or determine a safe ventilation time.'}
                 </p>
                 <div className="p-2.5 rounded-lg bg-cyan-950/40 border border-cyan-800/50 text-cyan-200">
-                  <span className="font-bold">{isBs ? 'Zlatni prozor za provjetravanje:' : 'Golden Airing Window:'}</span>{' '}
+                  <span className="font-bold">{isBs ? 'Pratite lokalne smjernice:' : 'Follow local guidance:'}</span>{' '}
                   {isBs
-                    ? 'Prozračite stan unakrsnim propuhom 3-5 minuta između 13:00 i 15:00 sati kada sunce privremeno oslabi temperaturnu inverziju.'
-                    : 'Airtight quick purge for 3-5 minutes between 13:00 and 15:00 when solar radiation temporarily thins the inversion lid.'}
+                    ? 'Odluku prilagodite aktuelnim vanjskim uslovima i izvorima zagađenja u prostoru.'
+                    : 'Adapt decisions to current outdoor conditions and pollution sources indoors.'}
                 </div>
               </div>
 
@@ -248,8 +252,8 @@ export const HealthAdvisoryModal: React.FC<HealthAdvisoryModalProps> = ({
                   {isBs ? 'Maske i pročišćivači zraka:' : 'Respirator Masks & Air Purifiers:'}
                 </h4>
                 <ul className="space-y-1.5 text-slate-300 pl-2">
-                  <li>• <strong>FFP2 / N95 / KN95:</strong> {isBs ? 'Jedine maske koje efikasno filtriraju čestice manje od 2.5 mikrometra.' : 'The only respirators that filter ultrafine 2.5 micron particles.'}</li>
-                  <li>• <strong>HEPA H13 Filteri:</strong> {isBs ? 'Uklanjaju 99.97% čestica iz zatvorenog prostora. Koristite ih u spavaćim sobama.' : 'Removes 99.97% of indoor particulates. Recommended for bedrooms.'}</li>
+                  <li>• <strong>{isBs ? 'Respiratori:' : 'Respirators:'}</strong> {isBs ? 'Efekat zavisi od odabira, prianjanja i pravilne upotrebe.' : 'Performance depends on selection, fit and correct use.'}</li>
+                  <li>• <strong>{isBs ? 'Pročišćivači zraka:' : 'Air cleaners:'}</strong> {isBs ? 'Mogu smanjiti čestice; rezultat zavisi od uređaja, prostora i održavanja.' : 'May reduce particles; results depend on the device, room and maintenance.'}</li>
                 </ul>
               </div>
             </div>

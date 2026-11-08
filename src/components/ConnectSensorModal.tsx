@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { StationData, ExternalServiceConfig } from '../types/airQuality.ts';
+import { validateManualInput } from '../utils/sensorInput.ts';
 import {
   X,
   Plus,
@@ -50,44 +51,36 @@ export const ConnectSensorModal: React.FC<ConnectSensorModalProps> = ({
   const [testPm10, setTestPm10] = useState('68');
   const [testTemp, setTestTemp] = useState('4.5');
 
-  const [testStatus, setTestStatus] = useState<'idle' | 'testing' | 'success' | 'failed'>('idle');
+  const [testStatus, setTestStatus] = useState<'idle' | 'success' | 'failed'>('idle');
   const [testMessage, setTestMessage] = useState('');
 
   if (!isOpen) return null;
 
-  const handleTestConnection = async () => {
-    setTestStatus('testing');
-    setTestMessage(isBs ? 'Povezivanje na senzor i verifikacija telemetrije...' : 'Connecting to sensor and verifying telemetry stream...');
-
-    setTimeout(() => {
-      const pm25Num = parseFloat(testPm25);
-      const pm10Num = parseFloat(testPm10);
-
-      if (isNaN(pm25Num) || isNaN(pm10Num) || pm25Num < 0 || pm10Num < 0) {
-        setTestStatus('failed');
-        setTestMessage(isBs ? 'Greška: Neispravne numeričke vrijednosti za PM2.5/PM10.' : 'Error: Invalid numeric values for PM2.5/PM10.');
-        return;
-      }
-
+  const validateForm = () => {
+    try {
+      const values = validateManualInput({ name, latitude: lat, longitude: lon, elevationM: elevation,
+        pm25: testPm25, pm10: testPm10, temperatureC: testTemp });
       setTestStatus('success');
       setTestMessage(
         isBs
-          ? `Uspješna veza! Očitano PM2.5: ${pm25Num} μg/m³, PM10: ${pm10Num} μg/m³, Temp: ${testTemp}°C.`
-          : `Connection verified! Telemetry read PM2.5: ${pm25Num} μg/m³, PM10: ${pm10Num} μg/m³, Temp: ${testTemp}°C.`
+          ? 'Unos je ispravan za lokalno spremanje. Uređaj i endpoint nisu kontaktirani niti provjereni.'
+          : 'Input is valid for local storage. The device and endpoint have not been contacted or verified.'
       );
-    }, 600);
+      return values;
+    } catch {
+      setTestStatus('failed');
+      setTestMessage(isBs
+        ? 'Provjerite naziv i brojeve: lat. −90–90, lon. −180–180, visina −500–9000 m, temperatura −100–100 °C, PM 0–1.000.000. Prazna polja nisu dozvoljena.'
+        : 'Check the name and numbers: latitude −90–90, longitude −180–180, elevation −500–9000 m, temperature −100–100 °C, PM 0–1,000,000. Empty fields are not allowed.');
+      return null;
+    }
   };
 
   const handleAddSensor = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
-
-    const pm25Num = parseFloat(testPm25) || 35;
-    const pm10Num = parseFloat(testPm10) || 55;
-    const tempNum = parseFloat(testTemp) || 4.0;
-    const latNum = parseFloat(lat) || 43.8563;
-    const lonNum = parseFloat(lon) || 18.4131;
-    const elevNum = parseInt(elevation, 10) || 520;
+    const values = validateForm();
+    if (!values) return;
+    const { pm25: pm25Num, pm10: pm10Num, temperatureC: tempNum, latitude: latNum, longitude: lonNum, elevationM: elevNum } = values;
 
     const newSensor: StationData = {
       id: `custom_${Date.now()}`,
@@ -98,14 +91,12 @@ export const ConnectSensorModal: React.FC<ConnectSensorModalProps> = ({
       longitude: lonNum,
       elevationM: elevNum,
       source: sourceType,
-      sourceName: sourceType === 'sensor_community'
-        ? 'Sensor.Community Node'
-        : sourceType === 'purple_air'
-        ? 'PurpleAir Node'
-        : 'Korisnički IoT Senzor (ESP32/PMS5003)',
+      sourceName: 'Manual entry / lokalni unos',
       isCustom: true,
+      provenance: 'manual',
+      forecastProvenance: 'synthetic',
       customEndpoint: endpointUrl.trim() || undefined,
-      lastUpdated: new Date().toLocaleTimeString(),
+      lastUpdated: new Date().toISOString(),
       pollutants: {
         pm25: pm25Num,
         pm10: pm10Num,
@@ -129,7 +120,13 @@ export const ConnectSensorModal: React.FC<ConnectSensorModalProps> = ({
       },
     };
 
-    onAddCustomSensor(newSensor);
+    try {
+      onAddCustomSensor(newSensor);
+    } catch {
+      setTestStatus('failed');
+      setTestMessage(isBs ? 'Lokalno spremanje nije uspjelo. Provjerite dozvole i prostor browsera.' : 'Local storage failed. Check browser permissions and available space.');
+      return;
+    }
     setName('');
     setTestStatus('idle');
     setActiveTab('services');
@@ -146,12 +143,12 @@ export const ConnectSensorModal: React.FC<ConnectSensorModalProps> = ({
             </div>
             <div>
               <h3 className="text-base sm:text-lg font-bold text-white">
-                {isBs ? 'Povezivanje senzora i monitoring servisa' : 'Connect Sensors & Tracking Services'}
+                {isBs ? 'Izvori podataka i ručni unos senzora' : 'Data Sources & Manual Sensor Entries'}
               </h3>
               <p className="text-xs text-slate-400">
                 {isBs
-                  ? 'Integrisani servisi za regiju Sarajevo i dodavanje vlastitih IoT senzora'
-                  : 'Integrated Sarajevo monitoring services and custom IoT station registry'}
+                  ? 'Open-Meteo model, referentni linkovi i lokalno spremljeni unosi'
+                  : 'Open-Meteo model, reference links and locally saved entries'}
               </p>
             </div>
           </div>
@@ -175,7 +172,7 @@ export const ConnectSensorModal: React.FC<ConnectSensorModalProps> = ({
             }`}
           >
             <Server className="w-4 h-4" />
-            <span>{isBs ? 'Aktivni servisi i mreže' : 'Active Tracking Services'} ({services.length})</span>
+            <span>{isBs ? 'Katalog izvora' : 'Source Directory'} ({services.length})</span>
           </button>
 
           <button
@@ -187,7 +184,7 @@ export const ConnectSensorModal: React.FC<ConnectSensorModalProps> = ({
             }`}
           >
             <Plus className="w-4 h-4" />
-            <span>{isBs ? 'Dodaj novi senzor' : 'Add Custom Sensor'}</span>
+            <span>{isBs ? 'Ručni unos' : 'Manual Entry'}</span>
             {customSensors.length > 0 && (
               <span className="ml-1 px-1.5 py-0.2 rounded-full bg-emerald-950 text-emerald-300 text-[10px]">
                 {customSensors.length}
@@ -204,7 +201,7 @@ export const ConnectSensorModal: React.FC<ConnectSensorModalProps> = ({
             }`}
           >
             <Code className="w-4 h-4" />
-            <span>{isBs ? 'IoT API & Webhook' : 'IoT API & Webhook'}</span>
+            <span>{isBs ? 'Prijedlog IoT API-ja' : 'Proposed IoT API'}</span>
           </button>
         </div>
 
@@ -215,8 +212,8 @@ export const ConnectSensorModal: React.FC<ConnectSensorModalProps> = ({
             <div className="space-y-4">
               <div className="text-xs text-slate-300 bg-slate-950/60 p-3 rounded-xl border border-slate-800">
                 {isBs
-                  ? 'Aplikacija u realnom vremenu sinhronizuje telemetriju sa službenim državnim i međunarodnim stanicama u kantonu Sarajevo, kao i sa mrežom građanskih laserskih senzora.'
-                  : 'The application synchronizes real-time telemetry from official federal and international reference stations in Canton Sarajevo alongside open citizen laser monitors.'}
+                  ? 'Podaci se preuzimaju samo iz Open-Meteo modela. Ostale stavke su vanjski izvori za poređenje; njihovi senzori nisu povezani. Ovaj katalog ne mjeri dostupnost niti latenciju servisa.'
+                  : 'Only Open-Meteo model data is fetched. Other entries are external references for comparison; their sensors are not connected. This directory does not measure service health or latency.'}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -229,12 +226,11 @@ export const ConnectSensorModal: React.FC<ConnectSensorModalProps> = ({
                       <div>
                         <div className="flex items-center gap-2">
                           <span className="font-bold text-white text-sm">{svc.name}</span>
-                          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
                         </div>
                         <div className="text-[11px] text-slate-400 mt-0.5">{svc.provider}</div>
                       </div>
-                      <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800">
-                        {svc.lastPingMs}ms
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
+                        {svc.status === 'configured' ? (isBs ? 'Konfigurisani izvor' : 'Configured source') : (isBs ? 'Referentni link' : 'Reference link')}
                       </span>
                     </div>
 
@@ -244,7 +240,7 @@ export const ConnectSensorModal: React.FC<ConnectSensorModalProps> = ({
 
                     <div className="mt-3 pt-2 border-t border-slate-800/80 flex items-center justify-between text-xs">
                       <span className="text-slate-400 text-[11px]">
-                        {svc.sensorCount} {isBs ? 'aktivnih senzora' : 'active sensors'}
+                        {svc.status === 'configured' ? (isBs ? '12 modeliranih lokacija' : '12 modelled locations') : (isBs ? 'Bez direktne integracije' : 'No direct integration')}
                       </span>
                       <a
                         href={svc.websiteUrl}
@@ -264,7 +260,7 @@ export const ConnectSensorModal: React.FC<ConnectSensorModalProps> = ({
               {customSensors.length > 0 && (
                 <div className="mt-6 pt-4 border-t border-slate-800">
                   <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
-                    {isBs ? 'Vaši registrovani korisnički senzori' : 'Your Custom Registered Sensors'}
+                    {isBs ? 'Vaši lokalni ručni unosi' : 'Your Local Manual Entries'}
                   </h4>
                   <div className="space-y-2">
                     {customSensors.map((cs) => (
@@ -299,11 +295,11 @@ export const ConnectSensorModal: React.FC<ConnectSensorModalProps> = ({
 
           {/* TAB 2: Add Custom Sensor */}
           {activeTab === 'add' && (
-            <form onSubmit={handleAddSensor} className="space-y-4 text-xs">
+            <form onSubmit={handleAddSensor} onChange={() => setTestStatus('idle')} className="space-y-4 text-xs">
               <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800 text-slate-300">
                 {isBs
-                  ? 'Dodajte vlastiti ESP32/Arduino senzor (PMS5003, SDS011) ili unesite ID sa Sensor.Community / PurpleAir platforme.'
-                  : 'Register your own DIY ESP32/Arduino air monitor (PMS5003, SDS011) or connect via Sensor.Community or PurpleAir ID.'}
+                  ? 'Ručno unesite lokaciju, PM2.5, PM10 i temperaturu. Unos ostaje samo u ovom browseru. URL ili ID se sprema kao bilješka; nema povezivanja niti automatskog osvježavanja uređaja. Ostali polutanti, vlaga, vjetar, pritisak i satni niz su ogledne sintetičke vrijednosti.'
+                  : 'Manually enter location, PM2.5, PM10 and temperature. The entry stays in this browser. A URL or ID is saved as a note; no device connection or automatic update occurs. Other pollutants, humidity, wind, pressure and the hourly series are synthetic sample values.'}
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -314,6 +310,7 @@ export const ConnectSensorModal: React.FC<ConnectSensorModalProps> = ({
                   <input
                     type="text"
                     required
+                    maxLength={120}
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder={isBs ? 'npr. Grbavica II - Balkon PMS5003' : 'e.g. Grbavica II - Home Node'}
@@ -377,6 +374,7 @@ export const ConnectSensorModal: React.FC<ConnectSensorModalProps> = ({
                   <input
                     type="number"
                     value={elevation}
+                    step="any"
                     onChange={(e) => setElevation(e.target.value)}
                     className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white font-mono focus:outline-none focus:border-emerald-500"
                   />
@@ -386,26 +384,27 @@ export const ConnectSensorModal: React.FC<ConnectSensorModalProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-slate-300 font-medium mb-1">
-                    {isBs ? 'Tip senzora / Protokol' : 'Hardware Protocol / Source'}
+                    {isBs ? 'Oznaka izvora (ručna konfiguracija)' : 'Source label (manual configuration)'}
                   </label>
                   <select
                     value={sourceType}
                     onChange={(e) => setSourceType(e.target.value as any)}
                     className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-emerald-500"
                   >
-                    <option value="custom_iot">DIY ESP32 / Arduino (HTTP JSON / Webhook)</option>
-                    <option value="sensor_community">Sensor.Community (Luftdaten API ID)</option>
-                    <option value="purple_air">PurpleAir (Station ID / JSON)</option>
+                    <option value="custom_iot">DIY ESP32 / Arduino</option>
+                    <option value="sensor_community">Sensor.Community</option>
+                    <option value="purple_air">PurpleAir</option>
                   </select>
                 </div>
 
                 <div>
                   <label className="block text-slate-300 font-medium mb-1">
-                    {isBs ? 'URL Endpoint ili ID uređaja' : 'HTTP URL Endpoint or Device ID'}
+                    {isBs ? 'URL ili ID — samo bilješka, bez provjere' : 'URL or ID — note only, not verified'}
                   </label>
                   <input
                     type="text"
                     value={endpointUrl}
+                    maxLength={500}
                     onChange={(e) => setEndpointUrl(e.target.value)}
                     placeholder="http://192.168.1.50/data.json"
                     className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white font-mono focus:outline-none focus:border-emerald-500"
@@ -416,15 +415,14 @@ export const ConnectSensorModal: React.FC<ConnectSensorModalProps> = ({
               {/* Initial test values */}
               <div className="p-3 bg-slate-950/80 rounded-xl border border-slate-800">
                 <div className="text-slate-400 font-bold mb-2 flex items-center justify-between">
-                  <span>{isBs ? 'Kalibracija i testno očitanje telemetrije' : 'Calibration & Test Telemetry'}</span>
+                  <span>{isBs ? 'Ručno unesene vrijednosti' : 'Manually Entered Values'}</span>
                   <button
                     type="button"
-                    onClick={handleTestConnection}
-                    disabled={testStatus === 'testing'}
+                    onClick={validateForm}
                     className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold flex items-center gap-1 cursor-pointer"
                   >
                     <Zap className="w-3 h-3 text-amber-400" />
-                    <span>{isBs ? 'Testiraj vezu' : 'Test Connection'}</span>
+                    <span>{isBs ? 'Provjeri unos' : 'Validate Input'}</span>
                   </button>
                 </div>
 
@@ -434,6 +432,7 @@ export const ConnectSensorModal: React.FC<ConnectSensorModalProps> = ({
                     <input
                       type="number"
                       value={testPm25}
+                      step="any"
                       onChange={(e) => setTestPm25(e.target.value)}
                       className="w-full bg-slate-900 border border-slate-700 rounded px-2.5 py-1 text-white font-mono"
                     />
@@ -443,6 +442,7 @@ export const ConnectSensorModal: React.FC<ConnectSensorModalProps> = ({
                     <input
                       type="number"
                       value={testPm10}
+                      step="any"
                       onChange={(e) => setTestPm10(e.target.value)}
                       className="w-full bg-slate-900 border border-slate-700 rounded px-2.5 py-1 text-white font-mono"
                     />
@@ -452,6 +452,7 @@ export const ConnectSensorModal: React.FC<ConnectSensorModalProps> = ({
                     <input
                       type="number"
                       value={testTemp}
+                      step="any"
                       onChange={(e) => setTestTemp(e.target.value)}
                       className="w-full bg-slate-900 border border-slate-700 rounded px-2.5 py-1 text-white font-mono"
                     />
@@ -493,7 +494,7 @@ export const ConnectSensorModal: React.FC<ConnectSensorModalProps> = ({
                   className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold flex items-center gap-1.5 shadow cursor-pointer"
                 >
                   <Plus className="w-4 h-4" />
-                  <span>{isBs ? 'Registruj senzor u Sarajevu' : 'Register Sensor on Sarajevo Map'}</span>
+                  <span>{isBs ? 'Spremi ručni unos na mapu' : 'Save Manual Entry on Map'}</span>
                 </button>
               </div>
             </form>
@@ -504,11 +505,11 @@ export const ConnectSensorModal: React.FC<ConnectSensorModalProps> = ({
             <div className="space-y-4 text-xs">
               <div className="bg-slate-950/80 p-3 rounded-xl border border-slate-800 text-slate-300">
                 <div className="font-bold text-white mb-1">
-                  {isBs ? 'Lokalni API za IoT entuzijaste i hakere u Sarajevu' : 'Local API for IoT Makers & Hackers'}
+                  {isBs ? 'Prijedlog buduće IoT integracije — nije implementiran' : 'Future IoT Integration Proposal — Not Implemented'}
                 </div>
                 {isBs
-                  ? 'Svaki ESP8266, ESP32 ili Raspberry Pi sa povezanim Plantower PMS5003 ili Nova SDS011 senzorom može slati telemetriju direktno u ovaj sistem.'
-                  : 'Any ESP8266, ESP32, or Raspberry Pi running PMS5003 or SDS011 can push real-time telemetry to this application.'}
+                  ? 'Primjeri ispod prikazuju mogući format za budući adapter. Ova aplikacija nema POST /api/telemetry endpoint, webhook server niti prihvat IoT poruka. Koristite ručni unos u prethodnom tabu.'
+                  : 'The examples below suggest a format for a future adapter. This application has no POST /api/telemetry endpoint, webhook server or IoT ingestion. Use the manual entry tab.'}
               </div>
 
               <div>
@@ -545,7 +546,8 @@ Content-Type: application/json
                 </div>
                 <pre className="bg-slate-950 p-3 rounded-xl border border-slate-800 font-mono text-[11px] text-slate-300 overflow-x-auto">
 {`HTTPClient http;
-http.begin("https://ais-dev-ith2hnoxpoguyrtrz3fjgw-945258677503.europe-west2.run.app/api/telemetry");
+// Example only. Requires a separately implemented and secured server.
+http.begin("https://your-telemetry-server.example/api/telemetry");
 http.addHeader("Content-Type", "application/json");
 
 String payload = "{\\"sensor_id\\":\\"moj_senzor\\",\\"pm25\\":" + String(pm25) + ",\\"pm10\\":" + String(pm10) + "}";

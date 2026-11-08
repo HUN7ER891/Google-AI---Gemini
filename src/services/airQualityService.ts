@@ -1,5 +1,6 @@
-import { StationData, ExternalServiceConfig, StationSource } from '../types/airQuality.ts';
+import type { StationData, ExternalServiceConfig } from '../types/airQuality.ts';
 import { calculateBosnianPM25AQI } from '../utils/aqiCalculations.ts';
+import { readManualSensor } from '../utils/sensorInput.ts';
 
 const CUSTOM_SENSORS_STORAGE_KEY = 'sarajevo_custom_sensors_v1';
 
@@ -8,67 +9,55 @@ export const INITIAL_SERVICES: ExternalServiceConfig[] = [
     id: 'open_meteo',
     name: 'Copernicus & Open-Meteo Air Quality',
     provider: 'Copernicus Atmosphere Monitoring Service (CAMS)',
-    status: 'active',
-    lastPingMs: 42,
-    descriptionBs: 'Evropska mreža satelitskih i meteoroloških senzora visoke rezolucije za Sarajevo.',
-    descriptionEn: 'High-resolution European atmospheric and satellite sensor reanalysis for Sarajevo.',
+    status: 'configured',
+    descriptionBs: 'Konfigurisano preuzimanje modeliranog zraka i vremena za 12 lokacija. Dio trenutnih vrijednosti aplikacija dodatno prilagođava heuristikom; ovo nisu direktna očitanja lokalnih stanica.',
+    descriptionEn: 'Configured air-quality and weather model requests for 12 locations. Some current values receive additional app heuristics; these are not direct local station measurements.',
     websiteUrl: 'https://open-meteo.com/en/docs/air-quality-api',
-    sensorCount: 9,
   },
   {
     id: 'fhmz',
     name: 'FHMZ BiH (Federalni hidrometeorološki zavod)',
     provider: 'Vlada FBiH / Kanton Sarajevo',
-    status: 'active',
-    lastPingMs: 65,
+    status: 'reference',
     descriptionBs: 'Službene referentne automatske stanice: Otoka, Ilidža, Vijećnica, Bjelave, Ilijaš, Vogošća.',
     descriptionEn: 'Official reference automated stations: Otoka, Ilidza, Vijecnica, Bjelave, Ilijas, Vogosca.',
     websiteUrl: 'https://www.fhmzbih.gov.ba',
-    sensorCount: 6,
   },
   {
     id: 'us_embassy',
     name: 'U.S. Embassy Sarajevo Air Quality Monitor',
     provider: 'US Department of State / AirNow',
-    status: 'active',
-    lastPingMs: 78,
+    status: 'reference',
     descriptionBs: 'BAM-1020 kalibrisani referentni monitor čestica PM2.5 u ulici Zmaja od Bosne.',
     descriptionEn: 'Calibrated Met One BAM-1020 PM2.5 particulate monitor at Zmaja od Bosne.',
     websiteUrl: 'https://ba.usembassy.gov/air-quality-monitor/',
-    sensorCount: 1,
   },
   {
     id: 'eko_akcija',
     name: 'Eko Akcija Indeks Kvaliteta Zraka',
     provider: 'Udruženje građana Eko Akcija',
-    status: 'active',
-    lastPingMs: 50,
+    status: 'reference',
     descriptionBs: 'Građanski agregator, upozorenja i indeks kvaliteta zraka za grad Sarajevo.',
     descriptionEn: 'Civic air quality index calculator, public health advisories, and aggregator.',
     websiteUrl: 'https://zrak.ekoakcija.org',
-    sensorCount: 8,
   },
   {
     id: 'sensor_community',
     name: 'Sensor.Community (Luftdaten Sarajevo)',
     provider: 'Open Citizen Science Network',
-    status: 'active',
-    lastPingMs: 110,
+    status: 'reference',
     descriptionBs: 'Mreža otvorenih kućnih senzora građana (SDS011 / Nova Fitness) širom Sarajeva.',
     descriptionEn: 'Global open sensor network built and hosted by Sarajevo citizens (SDS011 / PMS5003).',
     websiteUrl: 'https://sensor.community',
-    sensorCount: 14,
   },
   {
     id: 'purple_air',
     name: 'PurpleAir Sarajevo Network',
     provider: 'PurpleAir Cloud Sensors',
-    status: 'ready',
-    lastPingMs: 130,
+    status: 'reference',
     descriptionBs: 'Laserski brojači čestica sa dva laserska kanala u realnom vremenu.',
     descriptionEn: 'Dual-laser optical particle counters with real-time cloud data feed.',
     websiteUrl: 'https://map.purpleair.com',
-    sensorCount: 4,
   },
 ];
 
@@ -211,7 +200,8 @@ export function getCustomSensors(): StationData[] {
   try {
     const raw = localStorage.getItem(CUSTOM_SENSORS_STORAGE_KEY);
     if (!raw) return [];
-    return JSON.parse(raw);
+    const parsed: unknown = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.map(readManualSensor).filter((s): s is StationData => s !== null) : [];
   } catch (err) {
     console.error('Failed to parse custom sensors from localStorage:', err);
     return [];
@@ -219,14 +209,16 @@ export function getCustomSensors(): StationData[] {
 }
 
 export function saveCustomSensor(sensor: StationData): void {
+  const validated = readManualSensor(sensor);
+  if (!validated) throw new Error('Invalid manual sensor configuration');
   const existing = getCustomSensors();
   const index = existing.findIndex((s) => s.id === sensor.id);
   let updated: StationData[];
   if (index >= 0) {
     updated = [...existing];
-    updated[index] = sensor;
+    updated[index] = validated;
   } else {
-    updated = [...existing, sensor];
+    updated = [...existing, validated];
   }
   localStorage.setItem(CUSTOM_SENSORS_STORAGE_KEY, JSON.stringify(updated));
 }
@@ -238,7 +230,7 @@ export function removeCustomSensor(sensorId: string): void {
 }
 
 /**
- * Fetches live real-time air quality & weather for all stations from Open-Meteo Copernicus API
+ * Fetches modelled data for configured coordinates, preserving the prototype's labelled heuristics.
  */
 export async function fetchLiveSarajevoTelemetry(): Promise<StationData[]> {
   const customSensors = getCustomSensors();
@@ -268,6 +260,9 @@ export async function fetchLiveSarajevoTelemetry(): Promise<StationData[]> {
 
     const aqiList = Array.isArray(aqiDataRaw) ? aqiDataRaw : [aqiDataRaw];
     const weatherList = Array.isArray(weatherDataRaw) ? weatherDataRaw : [weatherDataRaw];
+    if (aqiList.length !== allStationsMetadata.length || weatherList.length !== allStationsMetadata.length) {
+      throw new Error('Incomplete Open-Meteo location batch');
+    }
 
     const mappedStations: StationData[] = allStationsMetadata.map((meta, i) => {
       const aqiItem = aqiList[i] || {};
@@ -275,11 +270,14 @@ export async function fetchLiveSarajevoTelemetry(): Promise<StationData[]> {
       const currentAQI = aqiItem.current || {};
       const currentWeather = weatherItem.current || {};
       const hourly = aqiItem.hourly || {};
+      const airValues = ['pm2_5', 'pm10', 'nitrogen_dioxide', 'sulphur_dioxide', 'carbon_monoxide', 'ozone'];
+      const weatherValues = ['temperature_2m', 'relative_humidity_2m', 'wind_speed_10m', 'wind_direction_10m', 'surface_pressure'];
+      if (!airValues.every(key => typeof currentAQI[key] === 'number' && Number.isFinite(currentAQI[key]) && currentAQI[key] >= 0) ||
+          !weatherValues.every(key => typeof currentWeather[key] === 'number' && Number.isFinite(currentWeather[key]))) {
+        throw new Error('Invalid or incomplete Open-Meteo current values');
+      }
 
-      // Open-Meteo values can be slightly model-smoothed; for realistic Sarajevo basin dynamics:
-      // Mountain station (Trebević) is significantly cleaner and elevation is 1160m.
-      // Ilijaš has industrial emissions (higher SO2/PM10).
-      // Otoka has peak traffic PM2.5 and NO2.
+      // Owner's prototype heuristics are preserved and labelled; these are not verified local measurements.
       let pm25 = Number(currentAQI.pm2_5 ?? 15);
       let pm10 = Number(currentAQI.pm10 ?? 25);
       let no2 = Number(currentAQI.nitrogen_dioxide ?? 20);
@@ -304,6 +302,12 @@ export async function fetchLiveSarajevoTelemetry(): Promise<StationData[]> {
       const hourlyTimes: string[] = hourly.time || [];
       const hourlyPM25: number[] = hourly.pm2_5 || [];
       const hourlyPM10: number[] = hourly.pm10 || [];
+      if (!Array.isArray(hourlyTimes) || !Array.isArray(hourlyPM25) || !Array.isArray(hourlyPM10) ||
+          !hourlyTimes.every(time => typeof time === 'string') ||
+          hourlyTimes.length !== hourlyPM25.length || hourlyTimes.length !== hourlyPM10.length ||
+          ![...hourlyPM25, ...hourlyPM10].every(value => typeof value === 'number' && Number.isFinite(value) && value >= 0)) {
+        throw new Error('Invalid Open-Meteo hourly values');
+      }
       const hourlyAQI: number[] = hourlyPM25.map((val) => calculateBosnianPM25AQI(val));
 
       return {
@@ -316,7 +320,9 @@ export async function fetchLiveSarajevoTelemetry(): Promise<StationData[]> {
         elevationM: meta.elevationM,
         source: meta.source,
         sourceName: meta.sourceName,
-        lastUpdated: currentAQI.time ? new Date(currentAQI.time).toLocaleTimeString() : new Date().toLocaleTimeString(),
+        provenance: ['trebevic', 'otoka', 'us_embassy', 'ilijas'].includes(meta.id) ? 'heuristic' : 'modelled',
+        forecastProvenance: 'modelled',
+        lastUpdated: typeof currentAQI.time === 'string' ? currentAQI.time : '—',
         pollutants: {
           pm25,
           pm10,
@@ -341,16 +347,8 @@ export async function fetchLiveSarajevoTelemetry(): Promise<StationData[]> {
       };
     });
 
-    // Also enrich custom sensors
-    const enrichedCustomSensors: StationData[] = customSensors.map((cs) => {
-      // If custom sensor has endpoint, we can ping it or use default telemetry
-      return {
-        ...cs,
-        lastUpdated: new Date().toLocaleTimeString(),
-      };
-    });
-
-    return [...mappedStations, ...enrichedCustomSensors];
+    // Manual entries retain their saved time: a model refresh does not contact their endpoints.
+    return [...mappedStations, ...customSensors];
   } catch (error) {
     console.warn('Network fetch error or offline fallback, generating telemetry for Sarajevo stations:', error);
     return getFallbackSarajevoTelemetry();
@@ -358,11 +356,10 @@ export async function fetchLiveSarajevoTelemetry(): Promise<StationData[]> {
 }
 
 /**
- * Fallback generator with realistic Sarajevo seasonal distribution
+ * Synthetic fallback examples, not observations or a current pollution assessment.
  */
 export function getFallbackSarajevoTelemetry(): StationData[] {
   const customSensors = getCustomSensors();
-  const now = new Date().toLocaleTimeString();
 
   const fallbackStations: StationData[] = BASELINE_STATIONS.map((meta) => {
     const isMountain = meta.id === 'trebevic';
@@ -382,7 +379,9 @@ export function getFallbackSarajevoTelemetry(): StationData[] {
       elevationM: meta.elevationM,
       source: meta.source,
       sourceName: meta.sourceName,
-      lastUpdated: now,
+      lastUpdated: '—',
+      provenance: 'synthetic',
+      forecastProvenance: 'synthetic',
       pollutants: {
         pm25: basePM25,
         pm10: basePM10,

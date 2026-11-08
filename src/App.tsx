@@ -106,7 +106,14 @@ export default function App() {
   }, [valleyStation, mountainStation]);
 
   // Canton metrics & Episode evaluation
-  const cantonMetrics = useMemo(() => {
+  const cantonMetrics = useMemo<{
+    avgPM10: number;
+    avgPM25: number;
+    avgAQI: number;
+    maxAQI: number;
+    worstStation: StationData | null;
+    cleanestStation: StationData | null;
+  }>(() => {
     if (!stations.length) {
       return {
         avgPM10: 45,
@@ -153,7 +160,7 @@ export default function App() {
     };
   }, [stations, aqiStandard]);
 
-  // Official Canton Episode
+  // Prototype episode estimate from displayed values, not an official declaration.
   const episodeStatus = useMemo(() => {
     return evaluateSarajevoCantonEpisode(
       cantonMetrics.avgPM10,
@@ -203,6 +210,15 @@ export default function App() {
       />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-5">
+        <div role="status" className="mb-4 rounded-xl border border-amber-800/60 bg-amber-950/30 p-3 text-xs text-amber-100 space-y-1">
+          <p className="font-semibold">{isBs ? 'Javni prototip: porijeklo podataka' : 'Public prototype: data provenance'}</p>
+          <p>{stations.some(s => s.provenance === 'synthetic')
+            ? (isBs ? 'Prikazane su sintetičke rezervne vrijednosti. Ovo nisu trenutna mjerenja; Open-Meteo podaci još nisu dostupni.' : 'Synthetic fallback values are displayed. These are not current measurements; Open-Meteo data is not available yet.')
+            : (isBs ? 'Preuzeti Open-Meteo/CAMS model za 12 lokacija. Trebević, Otoka, Ambasada SAD i Ilijaš uključuju dodatne lokalne heuristike za neke polutante.' : 'Fetched Open-Meteo/CAMS model data for 12 locations. Trebević, Otoka, U.S. Embassy and Ilijaš include additional local heuristics for some pollutants.')}</p>
+          <p>{isBs
+            ? 'Nazivi lokacija i mreža nisu dokaz direktne veze sa stanicom. Ručni unosi i ogledne dopunske vrijednosti ulaze u prikazane prosjeke. AQI, epizode i inverzija su procjene prototipa, a ne službena upozorenja ili potvrda sigurnosti zraka.'
+            : 'Location and network names do not establish a direct station connection. Manual entries and sample supporting values contribute to displayed averages. AQI, episodes and inversion are prototype estimates, not official alerts or confirmation of safe air.'}</p>
+        </div>
         {/* Canton Episode Alert Banner */}
         <CantonEpisodeBanner
           episodeStatus={episodeStatus}
@@ -254,7 +270,7 @@ export default function App() {
           <div className="bg-slate-900/80 border border-purple-900/40 rounded-xl p-3 flex flex-col justify-between">
             <span className="text-[11px] font-bold uppercase tracking-wider text-purple-300 flex items-center gap-1">
               <Mountain className="w-3.5 h-3.5" />
-              <span>{isBs ? 'Planinsko utočište' : 'Mountain Refuge'}</span>
+              <span>{isBs ? 'Planinska lokacija' : 'Mountain Location'}</span>
             </span>
             <div className="mt-1">
               <div className="text-sm font-bold text-white line-clamp-1">
@@ -265,7 +281,7 @@ export default function App() {
               </div>
             </div>
             <div className="text-[10px] text-emerald-400 mt-1 font-semibold">
-              {isBs ? '1.160m n/v • Čist zrak' : '1,160m • Clean Air'}
+              {isBs ? '1.160 m n/v • Procjena prototipa' : '1,160 m • Prototype estimate'}
             </div>
           </div>
 
@@ -276,7 +292,7 @@ export default function App() {
           >
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-400">
-                {isBs ? 'Povezani servisi' : 'Tracking Services'}
+                {isBs ? 'Katalog izvora' : 'Source Directory'}
               </span>
               <Radio className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
             </div>
@@ -285,11 +301,11 @@ export default function App() {
                 {services.length}
               </span>
               <span className="text-xs text-slate-400">
-                {isBs ? 'servisa' : 'services'} ({stations.length} {isBs ? 'senzora' : 'sensors'})
+                {isBs ? 'referenci' : 'references'} ({stations.length} {isBs ? 'lokacija' : 'locations'})
               </span>
             </div>
             <div className="text-[10px] text-emerald-400 font-semibold group-hover:underline flex items-center gap-1 mt-1">
-              <span>{isBs ? '+ Poveži novi senzor' : '+ Connect new sensor'}</span>
+              <span>{isBs ? '+ Dodaj ručni unos' : '+ Add manual entry'}</span>
             </div>
           </div>
         </div>
@@ -464,12 +480,12 @@ export default function App() {
               : 'Sarajevo Region Air Quality & Pollution Monitor (Canton Sarajevo, BiH)'}
           </div>
           <div className="flex items-center gap-4 text-slate-400">
-            <span>Izvori: FHMZ BiH, Ambasada SAD, Eko Akcija, Copernicus CAMS</span>
+            <span>{isBs ? 'Model: Open-Meteo / CAMS • heuristike i ogledni podaci su označeni' : 'Model: Open-Meteo / CAMS • heuristics and samples are labelled'}</span>
             <button
               onClick={() => setIsConnectModalOpen(true)}
               className="text-emerald-400 hover:underline"
             >
-              {isBs ? 'Poveži senzor' : 'Connect sensor'}
+              {isBs ? 'Ručni unos senzora' : 'Manual sensor entry'}
             </button>
           </div>
         </div>

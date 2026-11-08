@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { StationData } from '../types/airQuality.ts';
+import { provenanceLabel } from '../utils/dataProvenance.ts';
 import { getOverallAQI, AQIStandard } from '../utils/aqiCalculations.ts';
 import { Search, SlidersHorizontal, Mountain, Shield, Cpu, ArrowUpDown } from 'lucide-react';
 
@@ -65,7 +66,7 @@ export const StationGrid: React.FC<StationGridProps> = ({
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-800">
         <div>
           <h3 className="text-lg font-bold text-white flex items-center gap-2">
-            <span>{isBs ? 'Mreža stanica u Kantonu Sarajevo' : 'Sarajevo Canton Monitoring Network'}</span>
+            <span>{isBs ? 'Lokacije u Kantonu Sarajevo' : 'Sarajevo Canton Locations'}</span>
             <span className="text-xs px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 font-semibold border border-slate-700">
               {filteredAndSortedStations.length} {isBs ? 'stanica' : 'stations'}
             </span>
@@ -125,7 +126,7 @@ export const StationGrid: React.FC<StationGridProps> = ({
 
         <div className="h-4 w-px bg-slate-800 mx-1 hidden sm:block" />
 
-        <span className="text-slate-500 font-semibold mr-1 ml-1">{isBs ? 'Izvor:' : 'Source:'}</span>
+        <span className="text-slate-500 font-semibold mr-1 ml-1">{isBs ? 'Oznaka lokacije:' : 'Location label:'}</span>
         <button
           onClick={() => setSelectedSource('all')}
           className={`px-2.5 py-1 rounded-lg transition-colors ${
@@ -144,7 +145,7 @@ export const StationGrid: React.FC<StationGridProps> = ({
               : 'bg-slate-950/80 text-slate-400 hover:text-slate-200 border border-slate-800'
           }`}
         >
-          {isBs ? 'Službene (FHMZ/SAD)' : 'Official'}
+          {isBs ? 'FHMZ/SAD (bez direktne veze)' : 'FHMZ/U.S. (no direct feed)'}
         </button>
         <button
           onClick={() => setSelectedSource('citizen')}
@@ -154,7 +155,7 @@ export const StationGrid: React.FC<StationGridProps> = ({
               : 'bg-slate-950/80 text-slate-400 hover:text-slate-200 border border-slate-800'
           }`}
         >
-          {isBs ? 'Građanski senzori' : 'Citizen Nodes'}
+          {isBs ? 'Građanske oznake' : 'Citizen Labels'}
         </button>
       </div>
 
@@ -199,7 +200,7 @@ export const StationGrid: React.FC<StationGridProps> = ({
                   {stationName}
                 </h4>
                 <div className="text-[11px] text-slate-400 mt-0.5 line-clamp-1">
-                  {station.sourceName}
+                  {provenanceLabel(station, language)}
                 </div>
               </div>
 
@@ -240,7 +241,7 @@ export const StationGrid: React.FC<StationGridProps> = ({
               <div className="pt-2 border-t border-slate-800/70 flex items-center justify-between text-[11px] text-slate-400">
                 <span>{station.lastUpdated}</span>
                 <span className="text-emerald-400 font-semibold hover:underline">
-                  {isSelected ? (isBs ? 'Aktivna stanica ✓' : 'Active station ✓') : (isBs ? 'Prikaži detalje →' : 'View telemetry →')}
+                  {isSelected ? (isBs ? 'Odabrana lokacija ✓' : 'Selected location ✓') : (isBs ? 'Prikaži detalje →' : 'View details →')}
                 </span>
               </div>
             </div>

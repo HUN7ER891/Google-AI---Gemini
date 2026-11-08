@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import { StationData } from '../types/airQuality.ts';
 import { getOverallAQI, AQIStandard } from '../utils/aqiCalculations.ts';
+import { buildStationTooltip } from '../utils/mapTooltip.ts';
 import { MapPin, Mountain, Eye, Layers } from 'lucide-react';
 
 interface SarajevoMapProps {
@@ -36,19 +37,31 @@ export const SarajevoMap: React.FC<SarajevoMapProps> = ({
       minZoom: 10,
       maxZoom: 17,
       zoomControl: true,
-      attributionControl: false,
+      attributionControl: true,
     });
 
-    // ArcGIS World Dark Gray Base layer (no API key required, beautiful dark slate aesthetic)
+    // Keep attribution below the header and clear of the bottom legend on small screens.
+    map.attributionControl.setPosition('topright');
+    const attributionContainer = map.attributionControl.getContainer();
+    if (attributionContainer) {
+      attributionContainer.style.marginTop = '52px';
+      attributionContainer.style.maxWidth = '240px';
+    }
+
+    // Both existing ArcGIS layers publish the same source credits in copyrightText.
+    const tileAttribution = 'Powered by <a href="https://www.esri.com/">Esri</a> | Esri, HERE, Garmin, &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>, and the GIS user community';
+
+    // ArcGIS World Dark Gray Base layer; provider terms apply independently of this app.
     L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
       maxZoom: 16,
-      attribution: 'Esri, HERE, Garmin, OpenStreetMap contributors',
+      attribution: tileAttribution,
     }).addTo(map);
 
     // ArcGIS Reference overlay for street names and neighborhoods
     L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}', {
       maxZoom: 16,
       opacity: 0.85,
+      attribution: tileAttribution,
     }).addTo(map);
 
     const markersLayer = L.layerGroup().addTo(map);
@@ -170,24 +183,8 @@ export const SarajevoMap: React.FC<SarajevoMapProps> = ({
 
       const marker = L.marker([station.latitude, station.longitude], { icon: customIcon });
 
-      const stationName = isBs ? station.nameBs : station.name;
-      const categoryLabel = isBs ? aqiRes.labelBs : aqiRes.labelEn;
-
       marker.bindTooltip(
-        `
-        <div class="p-1">
-          <div class="flex items-center justify-between gap-2 mb-1">
-            <span class="font-bold text-white text-xs">${stationName}</span>
-            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded text-white" style="background-color: ${aqiRes.color}">
-              AQI ${aqiRes.aqi}
-            </span>
-          </div>
-          <div class="text-[11px] text-slate-300">
-            <div>${categoryLabel} (${aqiRes.dominantPollutant})</div>
-            <div class="text-slate-400 mt-0.5">PM2.5: ${station.pollutants.pm25} μg/m³ • ${station.elevationM}m n/v</div>
-          </div>
-        </div>
-        `,
+        buildStationTooltip(station, aqiRes, isBs),
         { direction: 'top', offset: [0, -18], className: 'custom-leaflet-tooltip' }
       );
 
@@ -220,7 +217,7 @@ export const SarajevoMap: React.FC<SarajevoMapProps> = ({
           {isBs ? 'Mapa Kantona Sarajevo' : 'Sarajevo Canton Map'}
         </span>
         <span className="text-slate-400">•</span>
-        <span className="text-slate-300">{stations.length} {isBs ? 'senzora' : 'sensors'}</span>
+        <span className="text-slate-300">{stations.length} {isBs ? 'lokacija' : 'locations'}</span>
       </div>
 
       {/* Map Legend Overlay */}
@@ -228,7 +225,7 @@ export const SarajevoMap: React.FC<SarajevoMapProps> = ({
         <div className="flex items-center justify-between text-[11px] font-bold text-slate-300 mb-1.5">
           <span>{isBs ? 'Indeks zagađenja' : 'Pollution Index (AQI)'}</span>
           <span className="text-[10px] text-slate-400 font-normal">
-            {isBs ? 'Izvor: FHMZ / Copernicus / EkoAkcija' : 'Sources: FHMZ / Copernicus'}
+            {isBs ? 'Model / ogledni podaci' : 'Model / sample data'}
           </span>
         </div>
         <div className="grid grid-cols-6 gap-1 text-[10px] text-center font-bold text-slate-200">

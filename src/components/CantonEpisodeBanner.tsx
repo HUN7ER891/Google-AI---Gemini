@@ -58,19 +58,19 @@ export const CantonEpisodeBanner: React.FC<CantonEpisodeBannerProps> = ({
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <span className={`text-xs px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider border ${severityStyles.badge}`}>
-                {title}
+                {isBs ? 'Procjena: ' : 'Estimate: '}{title}
               </span>
               {inversionActive && (
                 <span className="text-[11px] px-2 py-0.5 rounded-full bg-purple-900/40 border border-purple-500/30 text-purple-300 font-medium">
-                  {isBs ? 'Aktivna temperaturna inverzija' : 'Active Thermal Inversion'}
+                  {isBs ? 'Heuristički signal inverzije' : 'Heuristic inversion signal'}
                 </span>
               )}
             </div>
 
             <p className="text-xs sm:text-sm text-slate-300 mt-1">
               {isBs
-                ? `Plan interventnih mjera Vlade Kantona Sarajevo u slučajevima prekomjerne zagađenosti zraka.`
-                : `Official Sarajevo Canton Government Emergency Air Pollution Action Plan.`}
+                ? `Proračun prototipa iz prikazanih podataka. Nije službeno proglašena epizoda niti nalog nadležnih službi.`
+                : `Prototype calculation from the displayed data. This is not an officially declared episode or authority directive.`}
               {worstStationName && maxAQI && (
                 <span className="text-slate-400 ml-1">
                   {isBs ? 'Maksimalni indeks:' : 'Peak Index:'}{' '}
@@ -86,7 +86,7 @@ export const CantonEpisodeBanner: React.FC<CantonEpisodeBannerProps> = ({
           className="flex items-center gap-1.5 self-start md:self-center px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-900/60 hover:bg-slate-800/80 border border-slate-700/60 text-slate-300 hover:text-white transition-colors cursor-pointer shrink-0"
         >
           <Bell className="w-3.5 h-3.5 text-slate-400" />
-          <span>{isBs ? 'Mjere i zabrane' : 'Active Measures & Bans'}</span>
+          <span>{isBs ? 'Referentni scenarij' : 'Reference scenario'}</span>
           {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
         </button>
       </div>
@@ -97,8 +97,8 @@ export const CantonEpisodeBanner: React.FC<CantonEpisodeBannerProps> = ({
             <Info className="w-3.5 h-3.5 text-slate-300" />
             <span>
               {isBs
-                ? 'Naredbe i preporuke Stručnog tijela za koordinaciju i nadzor KS:'
-                : 'Mandates and advisories from Canton Sarajevo Environmental Committee:'}
+                ? 'Ilustrativne mjere u prototipu; stvarne odluke provjerite kod nadležnih službi:'
+                : 'Illustrative prototype measures; check the responsible authorities for current decisions:'}
             </span>
           </div>
           <ul className="grid grid-cols-1 md:grid-cols-2 gap-2 text-slate-300">

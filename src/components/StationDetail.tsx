@@ -1,5 +1,6 @@
 import React from 'react';
 import { StationData } from '../types/airQuality.ts';
+import { provenanceLabel } from '../utils/dataProvenance.ts';
 import { getOverallAQI, AQIStandard } from '../utils/aqiCalculations.ts';
 import {
   Wind,
@@ -67,9 +68,9 @@ export const StationDetail: React.FC<StationDetailProps> = ({
             <span>{stationName}</span>
           </h2>
           <div className="flex items-center gap-2 text-xs text-slate-400 mt-0.5">
-            <span>{station.sourceName}</span>
+            <span>{provenanceLabel(station, language)}</span>
             <span>•</span>
-            <span>{isBs ? 'Ažurirano:' : 'Updated:'} {station.lastUpdated}</span>
+            <span>{station.isCustom ? (isBs ? 'Uneseno:' : 'Entered:') : (isBs ? 'Vrijeme modela:' : 'Model time:')} {station.lastUpdated}</span>
           </div>
         </div>
 
@@ -77,7 +78,7 @@ export const StationDetail: React.FC<StationDetailProps> = ({
         <div className="flex items-center gap-2">
           {station.isCustom ? (
             <span className="text-xs px-2.5 py-1 rounded-lg bg-cyan-950 border border-cyan-800 text-cyan-300 font-semibold">
-              {isBs ? 'Povezani korisnički IoT senzor' : 'Connected Custom IoT Node'}
+              {isBs ? 'Lokalni ručni unos' : 'Local Manual Entry'}
             </span>
           ) : (
             <span className="text-xs px-2.5 py-1 rounded-lg bg-slate-800/80 border border-slate-700 text-slate-300 font-medium">
@@ -137,7 +138,7 @@ export const StationDetail: React.FC<StationDetailProps> = ({
           <div>
             <div className="flex items-center justify-between text-xs text-slate-400 font-semibold mb-3">
               <span>{isBs ? 'Lokalni meteorološki uslovi i ventilacija' : 'Local Meteorology & Ventilation'}</span>
-              <span className="text-slate-500 font-mono">Open-Meteo / FHMZ</span>
+              <span className="text-slate-500 font-mono">{station.provenance === 'manual' || station.provenance === 'synthetic' ? (isBs ? 'Ogledne / ručne vrijednosti' : 'Sample / manual values') : 'Open-Meteo model'}</span>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -202,9 +203,9 @@ export const StationDetail: React.FC<StationDetailProps> = ({
           {/* Quick guidance alert */}
           <div className="mt-3 p-2.5 rounded-lg bg-slate-900/70 border border-slate-800 flex items-center justify-between text-xs">
             <span className="text-slate-300">
-              {isMountain
-                ? (isBs ? '🏔️ Trebević se nalazi iznad kape smoga. Čist planinski vazduh!' : '🏔️ Trebević sits above the valley smog cap. Pristine alpine air!')
-                : (isBs ? '💡 Za bijeg od gradskog smoga preporučuje se Trebević (žičara) ili Igman/Bjelašnica.' : '💡 For smog escape, take the Sarajevo Cable Car to Trebević or head to Igman/Bjelašnica.')}
+              {isBs
+                ? 'Prikaz lokacije ne potvrđuje čist ili siguran zrak. Za odluke o boravku vani provjerite aktuelna lokalna mjerenja i službene preporuke.'
+                : 'This location view does not confirm clean or safe air. Check current local measurements and official guidance before outdoor decisions.'}
             </span>
           </div>
         </div>

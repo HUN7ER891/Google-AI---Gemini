@@ -1,6 +1,7 @@
 import React from 'react';
 import { StationData } from '../types/airQuality.ts';
 import { calculateInversionDiagnostic } from '../utils/aqiCalculations.ts';
+import { provenanceLabel } from '../utils/dataProvenance.ts';
 import { Mountain, ArrowUp, Wind, CloudFog, Sparkles, Navigation, AlertCircle } from 'lucide-react';
 
 interface InversionAnalyzerProps {
@@ -40,14 +41,14 @@ export const InversionAnalyzer: React.FC<InversionAnalyzerProps> = ({
                 inversion.isInverted ? 'bg-rose-950 text-rose-300 border border-rose-800' : 'bg-emerald-950 text-emerald-300 border border-emerald-800'
               }`}>
                 {inversion.isInverted
-                  ? (isBs ? 'Inverzija aktivna' : 'Inversion Active')
-                  : (isBs ? 'Normalno strujanje' : 'Normal Lapse Rate')}
+                  ? (isBs ? 'Heuristički signal inverzije' : 'Heuristic inversion signal')
+                  : (isBs ? 'Bez signala u modelu' : 'No signal in model')}
               </span>
             </h3>
             <p className="text-xs text-slate-400">
               {isBs
-                ? 'Poređenje zraka i temperature na dnu kotline (Otoka/Centar ~500m) i planini Trebević (1.160m)'
-                : 'Direct valley floor (Otoka ~500m) vs mountain peak (Trebević 1,160m) atmospheric comparison'}
+                ? 'Ilustrativno poređenje modeliranih ili probnih vrijednosti za kotlinu i Trebević. Nije potvrđeno mjerenje inverzije.'
+                : 'Illustrative valley/Trebević comparison using modelled or sample values. This is not a confirmed inversion measurement.'}
             </p>
           </div>
         </div>
@@ -57,8 +58,8 @@ export const InversionAnalyzer: React.FC<InversionAnalyzerProps> = ({
           <Sparkles className="w-4 h-4 text-purple-400 shrink-0" />
           <span>
             {isBs
-              ? `Na Trebeviću je zrak ${airCleannessPct}% čišći nego u gradu!`
-              : `Air at Trebević is ${airCleannessPct}% cleaner than the city!`}
+              ? `Razlika prikazanog PM2.5: ${airCleannessPct}% (model / primjer)`
+              : `Displayed PM2.5 difference: ${airCleannessPct}% (model / sample)`}
           </span>
         </div>
       </div>
@@ -72,7 +73,7 @@ export const InversionAnalyzer: React.FC<InversionAnalyzerProps> = ({
             1.200 m (Trebević Vidikovac)
           </div>
           <div className="absolute inset-x-0 top-1/3 border-b border-dashed border-purple-500/30 text-[10px] text-purple-400 font-mono pl-1 flex items-center justify-between pr-2">
-            <span>~750 m ({isBs ? 'Procijenjeni plafon smoga / Poklopac kotline' : 'Estimated Smog Inversion Ceiling'})</span>
+            <span>~750 m ({isBs ? 'Ilustrativna visina na dijagramu' : 'Illustrative diagram height'})</span>
             <span className="text-xs font-bold bg-purple-950/80 px-2 py-0.5 rounded border border-purple-600/40 text-purple-300">
               {inversion.isInverted ? (isBs ? 'Zarobljeno zagađenje ispod' : 'Trapped Smog Below') : (isBs ? 'Slobodna disperzija' : 'Open Dispersion')}
             </span>
@@ -91,8 +92,8 @@ export const InversionAnalyzer: React.FC<InversionAnalyzerProps> = ({
                 <CloudFog className="w-4 h-4 text-orange-400 shrink-0 animate-pulse" />
                 <span>
                   {isBs
-                    ? 'Smog je zarobljen temperaturnim poklopcem. Hladan zrak u kotlini sprečava vertikalno miješanje.'
-                    : 'Smog is trapped by the temperature lid. Cold dense air in the basin floor prevents vertical mixing.'}
+                    ? 'Dijagram prikazuje pojednostavljen scenarij zadržavanja zagađenja.'
+                    : 'This diagram illustrates a simplified pollution-trapping scenario.'}
                 </span>
               </div>
             </div>
@@ -110,7 +111,7 @@ export const InversionAnalyzer: React.FC<InversionAnalyzerProps> = ({
               </div>
               <div className="text-[10px] text-slate-400 mt-1 flex items-center gap-1">
                 <Wind className="w-3 h-3 text-sky-400" />
-                <span>{valleyWind} km/h • {inversion.ventilationStatusBs}</span>
+                <span>{valleyWind} km/h • {valleyStation ? provenanceLabel(valleyStation, language) : (isBs ? 'Probni podaci' : 'Sample data')}</span>
               </div>
             </div>
           </div>
@@ -144,7 +145,7 @@ export const InversionAnalyzer: React.FC<InversionAnalyzerProps> = ({
               </div>
               <div className="text-[10px] text-emerald-300 mt-1 flex items-center gap-1">
                 <Sparkles className="w-3 h-3 text-emerald-400" />
-                <span>{isBs ? 'Čist planinski zrak iznad smoga' : 'Pristine mountain air above smog'}</span>
+                <span>{mountainStation ? provenanceLabel(mountainStation, language) : (isBs ? 'Probni podaci' : 'Sample data')}</span>
               </div>
             </div>
           </div>
@@ -167,8 +168,8 @@ export const InversionAnalyzer: React.FC<InversionAnalyzerProps> = ({
           </div>
           <div className="text-[11px] text-slate-400 mt-1">
             {isBs
-              ? 'Pozitivan gradijent znači da topliji zrak djeluje kao hermetički poklopac nad gradom.'
-              : 'A positive delta acts as an airtight cap over the valley.'}
+              ? 'Razlika temperature je ulaz u pojednostavljenu heuristiku aplikacije.'
+              : 'The temperature difference is an input to the app’s simplified heuristic.'}
           </div>
         </div>
 
@@ -184,23 +185,23 @@ export const InversionAnalyzer: React.FC<InversionAnalyzerProps> = ({
           </div>
           <div className="text-[11px] text-slate-400 mt-1">
             {isBs
-              ? 'Brzina vjetra ispod 5 km/h u kotlini ne može otpuhati nakupljene čestice.'
-              : 'Wind under 5 km/h fails to disperse particulates from the valley floor.'}
+              ? 'Prikaz koristi modelirani ili probni vjetar, bez mjerenja lokalne disperzije.'
+              : 'This view uses modelled or sample wind, without measuring local dispersion.'}
           </div>
         </div>
 
         <div className="bg-slate-950/60 border border-slate-800 p-3 rounded-xl">
           <div className="text-xs text-slate-400 font-medium">
-            {isBs ? 'Preporuka za Sarajevsku žičaru' : 'Sarajevo Cable Car Recommendation'}
+            {isBs ? 'Planiranje boravka vani' : 'Planning time outdoors'}
           </div>
           <div className="text-base font-bold text-purple-300 mt-1 flex items-center gap-1.5">
             <Sparkles className="w-4 h-4 text-purple-400 shrink-0" />
-            <span>{isBs ? 'Preporučuje se odlazak' : 'Recommended Escape'}</span>
+            <span>{isBs ? 'Provjerite aktuelna mjerenja' : 'Check current observations'}</span>
           </div>
           <div className="text-[11px] text-slate-400 mt-1">
             {isBs
-              ? 'Vožnja žičarom od Bistrika do Trebevića traje 7 minuta i vodi direktno u čist zrak.'
-              : 'The 7-minute cable car ride from Bistrik ascends directly into clean alpine air.'}
+              ? 'Nadmorska visina i ovaj dijagram ne garantuju čist zrak. Provjerite mjerenja, vrijeme i lokalne obavijesti prije odlaska.'
+              : 'Elevation and this diagram do not guarantee clean air. Check observations, weather and local notices before travelling.'}
           </div>
         </div>
       </div>

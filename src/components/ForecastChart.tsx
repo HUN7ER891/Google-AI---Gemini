@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { StationData } from '../types/airQuality.ts';
+import { forecastLabel } from '../utils/dataProvenance.ts';
 import { calculateBosnianPM25AQI } from '../utils/aqiCalculations.ts';
 import { Clock, TrendingUp, Calendar, AlertCircle } from 'lucide-react';
 
@@ -44,13 +45,11 @@ export const ForecastChart: React.FC<ForecastChartProps> = ({ station, language 
           </div>
           <div>
             <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-              <span>{isBs ? '24-satna prognoza zagađenja' : '24-Hour Pollution Forecast'}</span>
+              <span>{station.forecastProvenance === 'modelled' ? (isBs ? 'Satni prikaz modela' : 'Hourly Model View') : (isBs ? 'Ogledni satni niz' : 'Sample Hourly Series')}</span>
               <span className="text-xs text-slate-400 font-normal">({isBs ? station.nameBs : station.name})</span>
             </h3>
             <p className="text-xs text-slate-400">
-              {isBs
-                ? 'Predviđanje kretanja čestica PM2.5 i PM10 na osnovu atmosferskih modela Copernicus'
-                : 'Copernicus atmospheric dispersion forecast for PM2.5 and PM10 particulates'}
+              {forecastLabel(station, language)}
             </p>
           </div>
         </div>

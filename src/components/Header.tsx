@@ -54,8 +54,8 @@ export const Header: React.FC<HeaderProps> = ({
                 </div>
                 <p className="text-xs text-slate-400">
                   {isBs
-                    ? 'Monitoring zagađenja u realnom vremenu • Kotlina i planine'
-                    : 'Real-time air pollution monitor • Valley & mountain network'}
+                    ? 'Prototip pregleda kvaliteta zraka • Modeli, heuristike i ručni unosi'
+                    : 'Air-quality viewer prototype • Models, heuristics and manual entries'}
                 </p>
               </div>
             </div>
@@ -65,8 +65,8 @@ export const Header: React.FC<HeaderProps> = ({
               <button
                 onClick={onOpenConnectModal}
                 className="p-2 rounded-lg bg-emerald-600/20 border border-emerald-500/30 text-emerald-300 hover:bg-emerald-600/30 transition-colors"
-                title={isBs ? 'Poveži senzor' : 'Connect sensor'}
-                aria-label={isBs ? 'Poveži senzor' : 'Connect sensor'}
+                title={isBs ? 'Ručni unos senzora' : 'Manual sensor entry'}
+                aria-label={isBs ? 'Ručni unos senzora' : 'Manual sensor entry'}
               >
                 <PlusCircle className="w-5 h-5" />
               </button>
@@ -136,7 +136,7 @@ export const Header: React.FC<HeaderProps> = ({
               className="hidden md:flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm shadow-emerald-950 transition-all cursor-pointer"
             >
               <PlusCircle className="w-3.5 h-3.5" />
-              <span>{isBs ? 'Poveži senzore i servise' : 'Connect Sensors & Services'}</span>
+              <span>{isBs ? 'Izvori i ručni unos' : 'Sources & Manual Entry'}</span>
             </button>
 
             {/* Language toggle */}
@@ -166,7 +166,7 @@ export const Header: React.FC<HeaderProps> = ({
               onClick={onRefresh}
               disabled={isRefreshing}
               className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs bg-slate-800 border border-slate-700 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors disabled:opacity-50"
-              title={isBs ? `Ažurirano u ${lastRefreshTime}` : `Updated at ${lastRefreshTime}`}
+              title={isBs ? `Posljednji pokušaj preuzimanja: ${lastRefreshTime}` : `Last fetch attempt: ${lastRefreshTime}`}
               aria-label={isBs ? 'Osvježi podatke' : 'Refresh data'}
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-emerald-400' : ''}`} />

@@ -1,4 +1,5 @@
 export type StationSource = 'fhmz' | 'us_embassy' | 'eko_akcija' | 'open_meteo' | 'sensor_community' | 'purple_air' | 'custom_iot';
+export type DataProvenance = 'modelled' | 'heuristic' | 'synthetic' | 'manual';
 
 export interface StationData {
   id: string;
@@ -13,6 +14,8 @@ export interface StationData {
   isCustom?: boolean;
   customEndpoint?: string;
   lastUpdated: string;
+  provenance?: DataProvenance;
+  forecastProvenance?: 'modelled' | 'synthetic';
   pollutants: {
     pm25: number;      // μg/m³
     pm10: number;      // μg/m³
@@ -52,10 +55,8 @@ export interface ExternalServiceConfig {
   id: string;
   name: string;
   provider: string;
-  status: 'active' | 'degraded' | 'custom' | 'ready';
-  lastPingMs: number;
+  status: 'configured' | 'reference';
   descriptionBs: string;
   descriptionEn: string;
   websiteUrl: string;
-  sensorCount: number;
 }
