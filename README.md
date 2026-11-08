@@ -8,7 +8,7 @@ The application combines a React/TypeScript interface, a Leaflet map, browser-si
 
 **Project owner:** Emir Džumhur / Operator × EmmA. The portfolio contribution covers product direction, a Sarajevo-specific user experience, and AI-assisted implementation. This repository contains the interface and data-processing implementation; it does not establish public adoption, commercial results, or certified environmental monitoring.
 
-[Original AI Studio project link](https://ai.studio/apps/5b23abff-3b53-497c-8808-83e9a01ce6c7) · [Data sources and limitations](docs/DATA_AND_LIMITATIONS.md) · [Verification record](docs/VERIFICATION.md)
+[Original AI Studio project link]([https://ai.studio/apps/5b23abff-3b53-497c-8808-83e9a01ce6c7](https://aistudio.google.com/apps/5b23abff-3b53-497c-8808-83e9a01ce6c7?fullscreenApplet=true&showAssistant=true&showPreview=true)) · [Data sources and limitations](docs/DATA_AND_LIMITATIONS.md) · [Verification record](docs/VERIFICATION.md)
 
 The repository is the primary review artifact. The AI Studio link may require a Google account and onboarding; the hosted application was not verified in this review.
 
